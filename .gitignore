@@ -1,0 +1,9 @@
+api/target/
+web/node_modules/
+web/dist/
+web/.next/
+web/test-results/
+web/playwright-report/
+*.log
+.DS_Store
+.env

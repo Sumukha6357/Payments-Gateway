@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/test
+    username: test
+    password: test
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  flyway:
+    enabled: false
+security:
+  enforce-secret-validation: false
+  jwt:
+    secret: test-test-test-test-test-test-test-test
+    issuer: payment-gateway-test
+    audience: payment-platform-test
+  auth:
+    admin-username: admin@example.com
+    admin-password: admin-password
+payments:
+  webhook:
+    secret: test-webhook-secret-test-webhook-secret

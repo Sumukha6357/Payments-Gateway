@@ -1,0 +1,18 @@
+package com.example.paymentgateway.repository;
+
+import com.example.paymentgateway.domain.entity.Payment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+import java.util.UUID;
+
+public interface PaymentRepository extends JpaRepository<Payment, UUID> {
+  Optional<Payment> findByExternalReference(String externalReference);
+
+  @Override
+  @EntityGraph(attributePaths = {"transaction"})
+  Page<Payment> findAll(Pageable pageable);
+}

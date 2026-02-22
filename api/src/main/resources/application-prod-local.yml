@@ -1,0 +1,26 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+security:
+  enforce-secret-validation: true
+  require-https: true
+  jwt:
+    access-token-ttl: PT5M
+    refresh-token-ttl: PT15M
+  auth:
+    refresh-cookie-secure: false
+  cors:
+    allowed-origins: http://localhost:3000,http://127.0.0.1:3000
+
+management:
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    org.springframework: INFO
+    com.example.paymentgateway: INFO

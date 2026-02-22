@@ -1,0 +1,35 @@
+services:
+  postgres:
+    restart: unless-stopped
+    mem_limit: 1g
+    cpus: 1.0
+
+  redis:
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: 0.5
+
+  flyway:
+    restart: "no"
+
+  api:
+    restart: unless-stopped
+    mem_limit: 1g
+    cpus: 1.0
+    environment:
+      APP_ENV: prod
+      SPRING_PROFILES_ACTIVE: prod
+      SECURITY_REQUIRE_HTTPS: "true"
+      AUTH_REFRESH_COOKIE_SECURE: "true"
+      NEXT_PUBLIC_ENABLE_MANUAL_TOKEN: "false"
+
+  web:
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: 1.0
+    ports:
+      - "${WEB_PORT}:${WEB_INTERNAL_PORT}"
+    environment:
+      APP_ENV: prod
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+      NEXT_PUBLIC_ENABLE_MANUAL_TOKEN: "false"

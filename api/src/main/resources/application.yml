@@ -1,0 +1,98 @@
+spring:
+  application:
+    name: payment-gateway
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:30000}
+      idle-timeout: ${DB_IDLE_TIMEOUT_MS:600000}
+      max-lifetime: ${DB_MAX_LIFETIME_MS:1800000}
+      validation-timeout: ${DB_VALIDATION_TIMEOUT_MS:5000}
+      connection-init-sql: SET statement_timeout = ${DB_STATEMENT_TIMEOUT_MS:10000}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        connection:
+          isolation: 2
+    open-in-view: false
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+    web:
+      pageable:
+        default-page-size: 50
+        max-page-size: 200
+  transaction:
+    default-timeout: ${TX_DEFAULT_TIMEOUT_SECONDS:15}
+
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+
+security:
+  enforce-secret-validation: ${SECURITY_ENFORCE_SECRET_VALIDATION:true}
+  require-https: ${SECURITY_REQUIRE_HTTPS:false}
+  jwt:
+    secret: ${JWT_SECRET:}
+    issuer: ${JWT_ISSUER:payment-gateway}
+    audience: ${JWT_AUDIENCE:payment-platform}
+    access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:PT15M}
+    refresh-token-ttl: ${JWT_REFRESH_TOKEN_TTL:P7D}
+  auth:
+    admin-username: ${AUTH_ADMIN_USERNAME:}
+    admin-password: ${AUTH_ADMIN_PASSWORD:}
+    refresh-cookie-secure: ${AUTH_REFRESH_COOKIE_SECURE:true}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
+
+payments:
+  webhook:
+    secret: ${WEBHOOK_SECRET:}
+    max-clock-skew: ${WEBHOOK_MAX_CLOCK_SKEW:PT5M}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,threaddump
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db,redis,outbox
+        liveness:
+          include: livenessState,ping
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: WARN
+
+ledger:
+  no-overdraft: ${LEDGER_NO_OVERDRAFT:true}
+
+outbox:
+  poll-interval-ms: ${OUTBOX_POLL_INTERVAL_MS:5000}
+  backlog-warning-threshold: ${OUTBOX_BACKLOG_WARNING_THRESHOLD:500}
+
+webhooks:
+  rate-limit-per-minute: ${WEBHOOK_RATE_LIMIT_PER_MINUTE:60}

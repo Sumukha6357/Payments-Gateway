@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "Payment Gateway",
+    "_postman_id": "d9f6f9ea-b555-4aa6-8f17-5073f02c3b9f",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Wallet",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Idempotency-Key", "value": "wallet-create-1" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/wallets",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"userId\":\"{{userId}}\",\"currency\":\"USD\"}"
+        }
+      }
+    },
+    {
+      "name": "Create Transfer",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Idempotency-Key", "value": "transfer-1" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/transactions/transfer",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"fromWalletId\":\"{{fromWalletId}}\",\"toWalletId\":\"{{toWalletId}}\",\"amount\":10.00}"
+        }
+      }
+    },
+    {
+      "name": "Create Payment",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Idempotency-Key", "value": "payment-1" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/payments",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"walletId\":\"{{walletId}}\",\"amount\":25.00}"
+        }
+      }
+    },
+    {
+      "name": "Payment Webhook",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-Signature", "value": "{{webhookSignature}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/payments/webhook",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"externalReference\":\"{{externalReference}}\",\"status\":\"SUCCESS\",\"amount\":25.00}"
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "walletId", "value": "" },
+    { "key": "fromWalletId", "value": "" },
+    { "key": "toWalletId", "value": "" },
+    { "key": "externalReference", "value": "" },
+    { "key": "webhookSignature", "value": "" }
+  ]
+}
