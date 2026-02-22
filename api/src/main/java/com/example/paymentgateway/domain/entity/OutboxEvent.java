@@ -10,6 +10,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
@@ -33,6 +34,7 @@ public class OutboxEvent {
 
   @Column(columnDefinition = "jsonb", nullable = false)
   @JdbcTypeCode(SqlTypes.JSON)
+  @ColumnTransformer(write = "?::jsonb")
   private String payload;
 
   @Enumerated(EnumType.STRING)

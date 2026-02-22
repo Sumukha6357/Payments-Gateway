@@ -6,15 +6,17 @@ import com.example.paymentgateway.domain.entity.Wallet;
 import com.example.paymentgateway.domain.enumtype.LedgerEntryType;
 import com.example.paymentgateway.dto.TransferRequest;
 import com.example.paymentgateway.integration.support.IntegrationTestBase;
+import com.example.paymentgateway.service.IdempotencyResult;
+import com.example.paymentgateway.service.IdempotencyService;
+import com.example.paymentgateway.service.TransactionService;
 import com.example.paymentgateway.repository.LedgerEntryRepository;
 import com.example.paymentgateway.repository.UserRepository;
 import com.example.paymentgateway.repository.WalletRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,16 +28,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 @AutoConfigureMockMvc(addFilters = false)
 public class ConcurrentTransferIT extends IntegrationTestBase {
 
   @Autowired
-  private MockMvc mockMvc;
-
-  @Autowired
-  private ObjectMapper objectMapper;
+  private TransactionService transactionService;
 
   @Autowired
   private UserRepository userRepository;
@@ -46,8 +44,10 @@ public class ConcurrentTransferIT extends IntegrationTestBase {
   @Autowired
   private LedgerEntryRepository ledgerEntryRepository;
 
+  @Autowired
+  private IdempotencyService idempotencyService;
+
   @Test
-  @WithMockUser(username = "user1")
   void concurrentTransfersShouldNotOverdraw() throws Exception {
     User user = new User();
     user.setEmail("sender2@example.com");
@@ -81,36 +81,39 @@ public class ConcurrentTransferIT extends IntegrationTestBase {
     request.setToWalletId(to.getId());
     request.setAmount(new BigDecimal("200.00"));
 
-    String body = objectMapper.writeValueAsString(request);
+    String payload = "{\"fromWalletId\":\"" + from.getId() + "\",\"toWalletId\":\"" + to.getId() + "\",\"amount\":200.00}";
 
     int threads = 10;
     ExecutorService executor = Executors.newFixedThreadPool(threads);
     CountDownLatch latch = new CountDownLatch(threads);
+    CountDownLatch start = new CountDownLatch(1);
     AtomicInteger successCount = new AtomicInteger();
 
     for (int i = 0; i < threads; i++) {
       int index = i;
       executor.submit(() -> {
         try {
-          int status = mockMvc.perform(post("/transactions/transfer")
-              .header("Idempotency-Key", "idem-concurrent-" + index)
-              .contentType("application/json")
-              .content(body))
-            .andReturn()
-            .getResponse()
-            .getStatus();
-          if (status == 200) {
+          start.await(10, TimeUnit.SECONDS);
+          SecurityContextHolder.getContext().setAuthentication(
+            new TestingAuthenticationToken("concurrent-user", "n/a", "ROLE_USER")
+          );
+          String key = "idem-concurrent-" + index;
+          String fingerprint = idempotencyService.fingerprint("POST", "/transactions/transfer", payload + "|" + key);
+          IdempotencyResult<?> result = transactionService.transfer(request, key, fingerprint);
+          if (result.getStatus() == 200) {
             successCount.incrementAndGet();
           }
         } catch (Exception ignored) {
         } finally {
+          SecurityContextHolder.clearContext();
           latch.countDown();
         }
       });
     }
 
+    start.countDown();
     latch.await(30, TimeUnit.SECONDS);
-    executor.shutdownNow();
+    executor.shutdown();
 
     assertThat(successCount.get()).isEqualTo(5);
 

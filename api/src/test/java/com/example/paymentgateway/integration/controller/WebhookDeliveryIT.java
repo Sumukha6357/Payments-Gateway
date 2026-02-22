@@ -1,6 +1,8 @@
 package com.example.paymentgateway.integration.controller;
 
 import com.example.paymentgateway.dto.WebhookEndpointRequest;
+import com.example.paymentgateway.domain.entity.OutboxEvent;
+import com.example.paymentgateway.domain.enumtype.OutboxStatus;
 import com.example.paymentgateway.integration.support.IntegrationTestBase;
 import com.example.paymentgateway.repository.OutboxEventRepository;
 import com.example.paymentgateway.service.OutboxService;
@@ -9,6 +11,9 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.time.OffsetDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,6 +41,16 @@ public class WebhookDeliveryIT extends IntegrationTestBase {
 
       outboxService.enqueue("Payment", "a1", "PAYMENT_SUCCESS", "{\"id\":\"evt-1\"}");
       outboxService.dispatchPending();
+
+      // Force immediate retry instead of waiting for exponential backoff.
+      List<OutboxEvent> pending = outboxEventRepository.findDispatchable(
+        List.of(OutboxStatus.PENDING, OutboxStatus.PROCESSING),
+        OffsetDateTime.now().plusSeconds(60)
+      );
+      assertThat(pending).isNotEmpty();
+      pending.forEach(event -> event.setNextAttemptAt(OffsetDateTime.now().minusSeconds(1)));
+      outboxEventRepository.saveAll(pending);
+
       outboxService.dispatchPending();
 
       assertThat(server.getRequestCount()).isGreaterThanOrEqualTo(2);

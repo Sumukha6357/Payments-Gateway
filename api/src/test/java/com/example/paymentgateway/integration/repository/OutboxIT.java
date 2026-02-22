@@ -46,10 +46,9 @@ public class OutboxIT extends IntegrationTestBase {
   private LedgerEntryRepository ledgerEntryRepository;
 
   @Test
-  @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = "USER")
+  @WithMockUser(username = "outbox-user", roles = "USER")
   void shouldDispatchOutboxEvents() {
     User user = new User();
-    setField(user, "id", UUID.fromString("00000000-0000-0000-0000-000000000001"));
     user.setEmail("outbox1@example.com");
     user.setName("Outbox1");
     userRepository.save(user);
@@ -90,16 +89,6 @@ public class OutboxIT extends IntegrationTestBase {
 
     List<OutboxEvent> sent = outboxEventRepository.findDispatchable(List.of(OutboxStatus.SENT), OffsetDateTime.now().plusSeconds(1));
     assertThat(sent).isNotEmpty();
-  }
-
-  private static void setField(Object target, String fieldName, Object value) {
-    try {
-      var field = target.getClass().getDeclaredField(fieldName);
-      field.setAccessible(true);
-      field.set(target, value);
-    } catch (ReflectiveOperationException ex) {
-      throw new AssertionError(ex);
-    }
   }
 }
 
