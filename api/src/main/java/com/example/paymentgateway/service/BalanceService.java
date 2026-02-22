@@ -16,12 +16,12 @@ public class BalanceService {
     this.ledgerEntryRepository = ledgerEntryRepository;
   }
 
-  @Cacheable(value = "walletBalance", key = "#walletId")
+  @Cacheable(value = "walletBalance", key = "#p0")
   public BigDecimal getBalance(UUID walletId) {
     return ledgerEntryRepository.calculateBalance(walletId);
   }
 
-  @CacheEvict(value = "walletBalance", key = "#walletId")
+  @CacheEvict(value = "walletBalance", key = "#p0")
   public void evictBalance(UUID walletId) {
   }
 }
