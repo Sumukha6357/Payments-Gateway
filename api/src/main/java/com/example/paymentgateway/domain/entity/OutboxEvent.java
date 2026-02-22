@@ -9,6 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -30,6 +32,7 @@ public class OutboxEvent {
   private String eventType;
 
   @Column(columnDefinition = "jsonb", nullable = false)
+  @JdbcTypeCode(SqlTypes.JSON)
   private String payload;
 
   @Enumerated(EnumType.STRING)
